@@ -2,15 +2,23 @@
 // ZNC to JSON Config Conversion by Thomas Edwards
 // Use commandline -o to overwrite regardless.
 // Created around ZNC Config v1.0
+
+// The Config we're reading, This can simply be a path.
+$config = "znc.conf";
+
+// Where are we writing this to. Something like /var/www/myznc/config.json would be fine.
+$dest = "zncconfig.json";
+
+// You dont need to bother with anything below this line.
 $force = false;
 if ($argc >= 2) {
 	if ($argv[1] == "-o") {
 		$force = true;
 	}
 }
-$config = "znc.conf";
-$dest = "zncconfig.json";
 echo "ZNC to JSON Parser by Thomas Edwards\n";
+
+// Check if either files exist.
 if (!file_exists($config)) {
 	die("The ZNC Config at '{$config}' could not be found.\n");
 }
@@ -18,6 +26,7 @@ if (file_exists($dest) && !$force) {
 	die("The JSON File {$dest} already exists.\n");
 }
 
+// Read the config into this variable and explode it into an array.
 $src_data = explode("\n",file_get_contents($config));
 
 // Setup the primary Structure.
@@ -46,7 +55,9 @@ $network = array();
 $chan = array();
 $password = array();
 
+// Cycle each line of the configuration.
 foreach ($src_data as $line) {
+	// Explode the line by its spaces and trim extra characters and whitespace.
 	$data = explode(chr(32),trim($line));
 		if ($data[0] == "<Listener") {
 			$in_listener = true;
@@ -105,8 +116,7 @@ foreach ($src_data as $line) {
 			}
 		}
 		else if ($data[0] != "//" && $data[0] != "") {
-			// It's not a comment.
-			//echo "Not comment. ".print_r($data,true);
+			// It's not a comment its a variable being set.
 			if ($in_user && !$in_chan && !$in_network && !$in_pass) {
 				if	($data[0] != "LoadModule") {
 					$user[$data[0]] = implode(chr(32),array_slice($data,2));
@@ -133,5 +143,5 @@ foreach ($src_data as $line) {
 		}
 }
 file_put_contents($dest,json_encode($json));
-echo "Config parsed. ".count($src_data)." lines were parsed into JSON.\n";
+echo "Config parsed. ".count($src_data)." lines were parsed into JSON and wrote to '{$dest}'\n";
 ?>
